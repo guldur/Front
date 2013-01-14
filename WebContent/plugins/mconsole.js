@@ -1,5 +1,5 @@
 /*
- *	! Copyright (c) 2013 Yuriy Yurch (http://)
+ *	! Copyright (c) 2013 Yuriy Yurch (http://github.com/yurch)
  */
 
 ;(function(){
