@@ -7,37 +7,98 @@
 	 * options
 	 */
 	var defOptions = {
-			enable: true,
-			keep: true
+			enable: false,
+			keep: false //TODO #future
 	};
 	
 	var _checks = {
-			isConsole : !!window.console,
-			isLog : !!window.console && !!window.console.log,
-			isError : !!window.console && !!window.console.error,
-			isInfo : !!window.console && !!window.console.info,
-			isDebug : !!window.console && !!window.console.debug
+			console : !!window.console,
+			log : !!window.console && !!window.console.log,
+			error : !!window.console && !!window.console.error,
+			info : !!window.console && !!window.console.info,
+			debug : !!window.console && !!window.console.debug
 	};
 	
-	var _settings = {};
+	var _settings = {
+			_names: ["mc", "mconsole"]
+	};
 	
 	/*
 	 * methods
 	 */
-	function _log(){
-		if(_settings.enable && _checks.isLog){
-			console.log.apply(console, arguments);
-			return mcInst;
+	
+	function _do (method, args){
+		if(_settings.enable){
+			if(_checks[method]){
+				if(console[method].apply){
+					//console[method].apply(console, args);
+				} else {
+					//IE
+					helpie(method, args);
+					
+				}
+			}
+		}
+		return this;
+	}
+	
+	function helpie(method, args){
+		var sb = [];
+		for(var i = args.length; i--;){
+			sb.push(getSource(args[i]));
+		}
+		console[method](sb.join(", "));
+	}
+	
+	function getSource(o){
+		if(typeof o === "string"){
+			return '"' + o + '"';
+		} else if(typeof o === "object"){
+			var r = [];
+			for(var p in o){
+				try{
+					r.push(p + ":" + o[p]); //flat
+				} catch (e) {
+					r.push(p + ': Error - "' + e + '"');
+				}
+			}
+			return '{' + r.join(', \n') + '}';
+		} else if(typeof o === "function"){
+			return o.toString().replace(/\n/g, '');
+		} else {
+			return o + "";
+		}
+		//typeof o === "function" return o.toString(); 
+	}
+	
+	function _setPublic(win, nameArr, inst){
+		var _nameArr = nameArr instanceof Array ? nameArr : typeof nameArr === "object" ? [nameArr] : [];
+		
+		for(var i = _nameArr.length; i--;){
+			var name = _nameArr[i];
+			if(!win[name]){
+				win[name] = inst;
+			}
 		}
 	}
 	
-	function _set(options){
-		if(typeof options === "object"){
-			for(var optName in options){
-				_settings[optName] = options[optName];
+	/**
+	 * set to settings all fields of all objects in the arguments
+	 * each next object override  the same field of previous
+	 * @param def {Object}
+	 * @param opts {Object}
+	 */
+	function _set(def, opts){
+		for(var i = arguments.length; i--;){
+			var obj = arguments[i];
+			if(typeof obj === "object"){
+				for(var optName in obj){
+					_settings[optName] = obj[optName];
+				}
 			}
 		}
-		return mcInst;
+		
+		return this;
 	}
 	
 	/*
@@ -45,15 +106,15 @@
 	 */
 	function _Mconsole(options){
 		if(this instanceof _Mconsole){
-			_set(defOptions);
-			
-			this.l = this.log = _log;
+			this.l = this.log = function(){return _do.call(this, "log", arguments);};
+			this.i = this.info = function(){return _do.call(this, "info", arguments);};
+			this.d = this.debug = function(){return _do.call(this, "debug", arguments);};
+			this.e = this.error = function(){return _do.call(this, "error", arguments);};
 			this.set = _set;
-			
+			this.on = function(){return this.set({enable: true});};
+			this.off = function(){return this.set({enable: false});};
+			this.set(defOptions, options);
 		} else {
-			if(typeof prop === "object"){
-				mcInst.set(options);
-			}
 			if(arguments.length > 0){
 				l.apply(this, arguments);
 			}
@@ -61,19 +122,15 @@
 		}
 	}
 	
-	var mcInst = new _Mconsole();
+	_setPublic(window, _settings._names, new _Mconsole());
 	
-	if(!window.mconsole){
-		window.mconsole = mcInst;
-		window.mconsole.l("mconsole ready to use!");
-	} else {
-		throw new Error("mconsole namespace is taken!");
-	}
+	/*
+	window.mc.l("mc ready to use!");
+	throw new Error("mc namespace is taken!");
+	window.mconsole.l("mconsole ready to use!");
+	throw new Error("mconsole namespace is taken!");
+	*/
 	
-	if(!window.mc){
-		window.mc = window.mconsole;
-		window.mc.l("mc ready to use!");
-	} else {
-		throw new Error("mc namespace is taken!");
-	}
+
+
 })();
