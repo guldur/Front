@@ -3,6 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Insert title here</title>
+
 <script type="text/javascript" src="plugins/mconsole.js"></script>
 
 
@@ -10,30 +11,23 @@
 <script type="text/javascript" src="include/jquery-ui-1.9.2.custom/js/jquery-ui-1.9.2.custom.js"></script>
 <link rel="stylesheet" href="include/jquery-ui-1.9.2.custom/css/blitzer/jquery-ui-1.9.2.custom.css"/>
 
-<script type="text/javascript" src="plugins/timelist/jquery.timelist.js"></script>
-<script type="text/javascript" src="js/main.js"></script>
-<link rel="stylesheet" href="css/main.css"/>
+<script type="text/javascript" src="plugins/wizard/jquery.wizard.js"></script>
+<script>
+	$(function() {
+		mc.on();
+		$( ".withard" ).wizard();
+	});
+</script>
+
 
 </head>
 <body>
-<br/>
-<br/>
-<a href="wizard.html">wizard</a>
-<br/>
-<br/>
-<table>
-<tr>
-<td> input date</td>
-<td><input type="text" id="date"/>
-</tr>
-<tr>
-<td> input time</td>
-<td><input type="text" id="time"/>
-</tr>
-<tr>
-<td> input time 2</td>
-<td><input type="text" id="time2"/>
-</tr>
-</table>
+<div>
+	<div class="withard">
+		<div>one</div>
+		<div>two</div>
+		<div>three</div>
+	</div>
+</div>
 </body>
 </html>
