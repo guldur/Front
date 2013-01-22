@@ -130,7 +130,80 @@
 	window.mconsole.l("mconsole ready to use!");
 	throw new Error("mconsole namespace is taken!");
 	*/
-	
-
-
 })();
+
+
+function _mconsole(){
+	  this.on=null;
+	  this.enable=false;
+	  this.iecons=[];
+	  this.ietimer={};
+	  this.is={};
+	  this.isEnable=function(){
+		  return !!this.enable;
+	  };
+	  this.log=function(a){
+		  if(this.isEnable()){
+		    if(this.is.console&&this.is.log){
+		      my_console_log(a);
+		    }else{
+		      this.iecons.push(a);
+		    }
+		  }
+	  };
+	  this.time=function(a){
+	    if(this.is.console&&this.is.time){
+	      console.time(a);
+	    }else{
+	      this.ietimer[a]=(new Date).getTime();
+	    }
+	  };
+	  this.timeEnd=function(a){
+	    if(this.is.console&&this.is.timeEnd){
+	      console.timeEnd(a);
+	    }else{
+	      this.log(a+": "+((new Date).getTime()-this.ietimer[a])+"ms");
+	    }
+	  };
+	  this.debug = function(a){
+		  if(this.is.console&&this.is.debug){
+		      console.debug(a);
+		    }else{
+		      //
+		    }
+	  },
+	  this.print=function(){
+	    return this.iecons.join("\n----\n");
+	  };
+	  this.printC=function(){
+	    this.print;
+	    this.iecons=[];
+	  };
+	  this.getUrlParam=function(){
+	    return "mconsole";
+	  };
+	  this._checkSwitch=function(){
+	    this.on=true;
+	  };
+	  this._initF=function(){
+	    this._checkSwitch();
+	    this.is.console = typeof console!='undefined';
+	    if(this.is.console){
+	      this.is.log = typeof my_console_log!='undefined';
+	      this.is.time = typeof console.time!='undefined';
+	      this.is.timeEnd = typeof console.timeEnd!='undefined';
+	      this.is.debug = typeof console.debug!='undefined';
+	    }else{
+	      this.is.log = false;
+	      this.is.time = false;
+	      this.is.timeEnd = false;
+	      this.is.debug = false;
+	    }
+	    return true;
+	  };
+	  this._init=this._initF();
+	  this.toString=function(){return "mconsole";};
+	  
+	  this.D=this.debug;
+	  this.L=this.log;
+	}
