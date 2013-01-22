@@ -5,6 +5,7 @@
 ;(function(){
 	/*
 	 * options
+	 * new  for git
 	 */
 	var defOptions = {
 			enable: false,
