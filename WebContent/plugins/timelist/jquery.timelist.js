@@ -8,8 +8,7 @@
  * debug mode
  * 
  */
-	//mc.on();
-	
+
   $.widget('yy.timelist', {
 	  _create: function(){
 		mc.l("_create", arguments);

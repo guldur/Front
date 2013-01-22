@@ -31,7 +31,7 @@
 		if(_settings.enable){
 			if(_checks[method]){
 				if(console[method].apply){
-					//console[method].apply(console, args);
+					console[method].apply(console, args);
 				} else {
 					//IE
 					helpie(method, args);
