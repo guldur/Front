@@ -132,7 +132,7 @@
 	*/
 })();
 
-
+/*
 function _mconsole(){
 	  this.on=null;
 	  this.enable=false;
@@ -207,3 +207,5 @@ function _mconsole(){
 	  this.D=this.debug;
 	  this.L=this.log;
 	}
+	
+	*/
