@@ -9,9 +9,11 @@
 	STEP = "yy-wizard-step";
 	
 	$.widget( "yy.wizard", {
+		
+		_dialogOptions:{
+			
+		},
 		options: {
-			prevLabel : "prev",
-			nextLabel :	"next",
 			appendTo : "body",
 			autoOpen : true,
 			closeOnEscape : true,
@@ -30,6 +32,8 @@
 			title : "Wizard:",
 			width : "400",
 			//
+			prevLabel : "prev",
+			nextLabel :	"next",
 			through : {effect : "drop", duration : "fast"},
 			
 			// callbacks
@@ -45,6 +49,8 @@
 			resizeStop: null,
 			beforePrev: null,
 			beforeNext: null,
+			
+			//
 			afterPrev: null,
 			afterNext: null
 		},
@@ -52,23 +58,22 @@
 		_create: function() {
 			mc.l("_create", this, arguments);
 			var that = this;
+			//TODO title
+			//TODO road
 			var opt = $.extend({}, this.options, {buttons: [ 
-			    			                                { text: this.options.prevLabel, click: function() { that.prev(); } },
-			    			                                { text: this.options.nextLabel, click: function() { that.next(); } }]});
+			    			                                { label: "prev", text: this.options.prevLabel, click: function() { that.prev(); } },
+			    			                                { label: "next", text: this.options.nextLabel, click: function() { that.next(); } }]});
 			this.element.dialog(opt);
-			this.element.children().each(function(){
-				var that = $(this);
-				that.hide();
-				if(that.is("div")){
-					that.addClass(STEP);
-					if(that.is(":first")){
-						that.addClass(STEP_FIRST);
-					}
-					if(that.is(":last")){
-						that.addClass(STEP_LAST);
+			this.element.children().each(function(n){
+				var el = $(this);
+				el.hide();
+				if(el.is("div")){
+					el.addClass(STEP);
+					if(n == 0){
+						el.addClass(STEP_FIRST);
 					}
 				}
-			});
+			}).filter('div:last').addClass(STEP_LAST);
 			
 			this._isOpen = false;
 			
@@ -79,9 +84,19 @@
 			mc.l("_init", this, arguments);
 			this.element.children("." + STEP).hide().removeClass(STEP_CURRENT);
 			this.element.find("." + STEP_FIRST).show().addClass(STEP_CURRENT);
-			
+			this._initButtons();
+			this._prevButton.button( "disable" );
 			if ( this.options.autoOpen ) {
 				this.open();
+			}
+		},
+		
+		_initButtons: function(){
+			if(!this._prevButton){
+				this._prevButton = $('button[label="prev"]', this.element.parent());
+			}
+			if(!this._nextButton){
+				this._nextButton = $('button[label="next"]', this.element.parent());
 			}
 		},
 		
@@ -111,16 +126,35 @@
 		prev: function() {
 			mc.l("prev", this, arguments);
 			var cur = this.element.children("." + STEP_CURRENT);
+			var prev = null;
 			if(!cur.is("." + STEP_FIRST)){
-				cur.removeClass(STEP_CURRENT).hide().prev("." + STEP).addClass(STEP_CURRENT).show();
+				prev = cur.removeClass(STEP_CURRENT).hide().prev("." + STEP).addClass(STEP_CURRENT).show();
+			}
+			
+			if(prev && prev.is("." + STEP_FIRST)){
+				this._prevButton.button( "disable" );
+			} else {
+				if(this._nextButton.button( "option", "disabled" )){
+					this._nextButton.button( "enable" );
+				}
 			}
 		},
-		
+		_prevButton : null,
+		_nextButton : null,
 		next: function() {
 			mc.l("next", this, arguments);
 			var cur = this.element.children("." + STEP_CURRENT);
+			var next = null;
 			if(!cur.is("." + STEP_LAST)){
-				cur.removeClass(STEP_CURRENT).hide().next("." + STEP).addClass(STEP_CURRENT).show();
+				next = cur.removeClass(STEP_CURRENT).hide().next("." + STEP).addClass(STEP_CURRENT).show();
+			}
+			
+			if(next && next.is("." + STEP_LAST)) {
+				this._nextButton.button( "disable" );
+			} else {
+				if(this._prevButton.button( "option", "disabled" )){
+					this._prevButton.button( "enable" );
+				}
 			}
 		},
 		
