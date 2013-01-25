@@ -1,19 +1,19 @@
-
+/**
+ * 
+ */
 
 ;(function( $, undefined ) {
 	
-	var 
-	STEP_FIRST = "yy-wizard-step-first",
-	STEP_LAST = "yy-wizard-step-last",
-	STEP_CURRENT = "yy-wizard-step_cur",
-	STEP = "yy-wizard-step";
+	var css = {
+			STEP_FIRST : "yy-wizard-step-first",
+			STEP_LAST : "yy-wizard-step-last",
+			STEP_CURRENT : "yy-wizard-step_cur",
+			STEP : "yy-wizard-step"
+		};
 	
 	$.widget( "yy.wizard", {
 		
 		_dialogOptions:{
-			
-		},
-		options: {
 			appendTo : "body",
 			autoOpen : true,
 			closeOnEscape : true,
@@ -29,12 +29,8 @@
 			position : { my: "center", at: "center", of: window },
 			resizable : true,
 			show : {effect : "drop", duration : "fast"},
-			title : "Wizard:",
+			title : null,
 			width : "400",
-			//
-			prevLabel : "prev",
-			nextLabel :	"next",
-			through : {effect : "drop", duration : "fast"},
 			
 			// callbacks
 			beforeClose: null,
@@ -48,42 +44,126 @@
 			resizeStart: null,
 			resizeStop: null,
 			beforePrev: null,
-			beforeNext: null,
+			beforeNext: null
+		},
+		
+		_title : {
+			prefix: "Wizard: ",
+			separator : ' : ',
+			label : null
+		},
+		
+		options: {
 			
 			//
+			prevLabel : "prev",
+			nextLabel :	"next",
+			through : {effect : "drop", duration : "fast"},
+			title : null,
+			
+			// callbacks
 			afterPrev: null,
 			afterNext: null
 		},
 		
+		_getDialogOption: function(addopt) {
+			var dialog ={};
+			for (var opt in this._dialogOptions){
+				if(typeof this.options[opt] !== 'undefined'){
+					dialog[opt] = this.options[opt];
+				} else if(addopt && typeof addopt[opt]  !== 'undefined'){
+					dialog[opt] = addopt[opt];
+				} else {
+					dialog[opt] = this._dialogOptions[opt];
+				}
+			}
+			
+			//add buttons
+			dialog.buttons = (function(that){
+				 return [{ label: "prev", text: that.options.prevLabel, click: function() { that.prev(); } },
+				         { label: "next", text: that.options.nextLabel, click: function() { that.next(); } }];
+			}(this));
+			return dialog;
+		},
+		
+		_initTitle: function() {
+			//user added title for dialog
+			if(typeof this.options.title === "string"){
+				
+				title.push(this.options.title);
+				
+			//if no value or default value check title of element
+			} else if(!this.options.title || !this.options.title.label){
+				var elTitle = this.element.attr('title');
+				
+				//if title is null 
+				if(!this.options.title){
+					this.options.title = this._title;
+				}
+				
+				if(elTitle){
+					this.options.title.label = elTitle;
+				} else {
+					this.options.title.label = '';
+				}
+			}
+		},
+		
+		_getTitle: function(stepTitle) {
+			
+			var title = [];
+			
+			//start create title
+			title.push(this.options.title.prefix);
+			title.push(this.options.title.label);
+			
+			//add separator and step title
+			if(stepTitle){
+				title.push(this.options.title.separator);
+				title.push(stepTitle);
+			}
+			
+			return title.join('');
+		},
+		
+		_setTitle: function(stepTitle) {
+			this.element.dialog('option', 'title', this._getTitle(stepTitle));
+		},
+		
 		_create: function() {
 			mc.l("_create", this, arguments);
-			var that = this;
-			//TODO title
+			
 			//TODO road
-			var opt = $.extend({}, this.options, {buttons: [ 
-			    			                                { label: "prev", text: this.options.prevLabel, click: function() { that.prev(); } },
-			    			                                { label: "next", text: this.options.nextLabel, click: function() { that.next(); } }]});
-			this.element.dialog(opt);
+			
+			mc.l("_create opt", this._getDialogOption());
+			
+			this._initTitle();
+			
+			this.element.dialog(this._getDialogOption());
+			
 			this.element.children().each(function(n){
 				var el = $(this);
 				el.hide();
 				if(el.is("div")){
-					el.addClass(STEP);
+					el.addClass(css.STEP);
 					if(n == 0){
-						el.addClass(STEP_FIRST);
+						el.addClass(css.STEP_FIRST);
 					}
 				}
-			}).filter('div:last').addClass(STEP_LAST);
+			}).filter('div:last').addClass(css.STEP_LAST);
+			
 			
 			this._isOpen = false;
-			
-			mc.l("_create", this.element.children());
 		},
 		
 		_init: function() {
 			mc.l("_init", this, arguments);
-			this.element.children("." + STEP).hide().removeClass(STEP_CURRENT);
-			this.element.find("." + STEP_FIRST).show().addClass(STEP_CURRENT);
+			this.element.children("." + css.STEP).hide().removeClass(css.STEP_CURRENT);
+			
+			this._setTitle(this.element.find("." + css.STEP_FIRST).show().addClass(css.STEP_CURRENT).attr('title'));
+			
+			
+			
 			this._initButtons();
 			this._prevButton.button( "disable" );
 			if ( this.options.autoOpen ) {
@@ -102,6 +182,8 @@
 		
 		_destroy: function() {
 			mc.l("_destroy", this, arguments);
+			this.element.children("." + css.STEP).removeClass(css.STEP).removeClass(css.STEP_CURRENT).removeClass(css.STEP_FIRST).removeClass(css.STEP_LAST);
+			this.element.dialog("destroy");
 		},
 		
 		disable: $.noop,
@@ -125,13 +207,17 @@
 		
 		prev: function() {
 			mc.l("prev", this, arguments);
-			var cur = this.element.children("." + STEP_CURRENT);
+			var cur = this.element.children("." + css.STEP_CURRENT);
 			var prev = null;
-			if(!cur.is("." + STEP_FIRST)){
-				prev = cur.removeClass(STEP_CURRENT).hide().prev("." + STEP).addClass(STEP_CURRENT).show();
+			if(!cur.is("." + css.STEP_FIRST)){
+				prev = cur.removeClass(css.STEP_CURRENT).hide().prev("." + css.STEP).addClass(css.STEP_CURRENT).show();
+				
+				//set title
+				this._setOption('title', prev.attr('title'));
 			}
 			
-			if(prev && prev.is("." + STEP_FIRST)){
+			//disable or not  
+			if(prev && prev.is("." + css.STEP_FIRST)){
 				this._prevButton.button( "disable" );
 			} else {
 				if(this._nextButton.button( "option", "disabled" )){
@@ -143,13 +229,17 @@
 		_nextButton : null,
 		next: function() {
 			mc.l("next", this, arguments);
-			var cur = this.element.children("." + STEP_CURRENT);
+			var cur = this.element.children("." + css.STEP_CURRENT);
 			var next = null;
-			if(!cur.is("." + STEP_LAST)){
-				next = cur.removeClass(STEP_CURRENT).hide().next("." + STEP).addClass(STEP_CURRENT).show();
+			if(!cur.is("." + css.STEP_LAST)){
+				next = cur.removeClass(css.STEP_CURRENT).hide().next("." + css.STEP).addClass(css.STEP_CURRENT).show();
+				
+				//set title
+				this._setOption('title', next.attr('title'));
 			}
 			
-			if(next && next.is("." + STEP_LAST)) {
+			//disable or not  
+			if(next && next.is("." + css.STEP_LAST)) {
 				this._nextButton.button( "disable" );
 			} else {
 				if(this._prevButton.button( "option", "disabled" )){
@@ -162,18 +252,16 @@
 			mc.l("reset", this, arguments);
 		},
 		
+		_setOption: function(key, value){
+			mc.l("_setOptions", this, arguments);
+		},
+		
+		_setOptions: function(options){
+			mc.l("_setOptions", this, arguments);
+		}
 	});
 	
 	$.extend($.yy.wizard, {
 		instances: []
 	});
 }(jQuery));
-/*
-modal: true,
-buttons: {
-Ok: function() {
-$( this ).dialog( "close" );
-}
-}s
-	
-	*/
