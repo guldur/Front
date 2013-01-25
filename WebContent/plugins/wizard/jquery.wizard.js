@@ -8,7 +8,8 @@
 			STEP_FIRST : "yy-wizard-step-first",
 			STEP_LAST : "yy-wizard-step-last",
 			STEP_CURRENT : "yy-wizard-step_cur",
-			STEP : "yy-wizard-step"
+			STEP : "yy-wizard-step",
+			STEP_N : "yy-step-"
 		};
 	
 	$.widget( "yy.wizard", {
@@ -48,11 +49,12 @@
 		},
 		
 		_title : {
-			prefix: "Wizard: ",
 			separator : ' : ',
-			label : null
+			text : null
 		},
-		
+		_cacheStyle:{
+			
+		},
 		options: {
 			
 			//
@@ -93,7 +95,7 @@
 				title.push(this.options.title);
 				
 			//if no value or default value check title of element
-			} else if(!this.options.title || !this.options.title.label){
+			} else if(!this.options.title || !this.options.title.text){
 				var elTitle = this.element.attr('title');
 				
 				//if title is null 
@@ -102,9 +104,9 @@
 				}
 				
 				if(elTitle){
-					this.options.title.label = elTitle;
+					this.options.title.text = elTitle;
 				} else {
-					this.options.title.label = '';
+					this.options.title.text = '';
 				}
 			}
 		},
@@ -114,8 +116,7 @@
 			var title = [];
 			
 			//start create title
-			title.push(this.options.title.prefix);
-			title.push(this.options.title.label);
+			title.push(this.options.title.text);
 			
 			//add separator and step title
 			if(stepTitle){
@@ -131,18 +132,18 @@
 		},
 		
 		_create: function() {
-			mc.l("_create", this, arguments);
-			
 			//TODO road
-			
-			mc.l("_create opt", this._getDialogOption());
-			
+			var that = this;
 			this._initTitle();
+			
+			this._cacheStyle.dialog = this.element.attr("style");
 			
 			this.element.dialog(this._getDialogOption());
 			
 			this.element.children().each(function(n){
 				var el = $(this);
+				//var id = css.STEP_N + n;
+				that._cacheStyle[n] = el.attr("style");
 				el.hide();
 				if(el.is("div")){
 					el.addClass(css.STEP);
@@ -157,11 +158,9 @@
 		},
 		
 		_init: function() {
-			mc.l("_init", this, arguments);
 			this.element.children("." + css.STEP).hide().removeClass(css.STEP_CURRENT);
 			
 			this._setTitle(this.element.find("." + css.STEP_FIRST).show().addClass(css.STEP_CURRENT).attr('title'));
-			
 			
 			
 			this._initButtons();
@@ -181,9 +180,17 @@
 		},
 		
 		_destroy: function() {
-			mc.l("_destroy", this, arguments);
-			this.element.children("." + css.STEP).removeClass(css.STEP).removeClass(css.STEP_CURRENT).removeClass(css.STEP_FIRST).removeClass(css.STEP_LAST);
+			var that = this;
 			this.element.dialog("destroy");
+			this.element.children("." + css.STEP)
+				.removeClass(css.STEP)
+				.removeClass(css.STEP_CURRENT)
+				.removeClass(css.STEP_FIRST)
+				.removeClass(css.STEP_LAST)
+				.each(function(n){
+					$(this).attr("style", that._cacheStyle[n]||'');
+				});
+			this.element.attr("style", that._cacheStyle.dialog||'');
 		},
 		
 		disable: $.noop,
@@ -194,19 +201,16 @@
 		},
 		
 		open: function() {
-			mc.l("open", this, arguments);
 			this._isOpen = true;
 			$( this ).dialog( "open" );
 		},
 		
 		close: function() {
-			mc.l("close", this, arguments);
 			this._isOpen = false;
 			$( this ).dialog( "close" );
 		},
 		
 		prev: function() {
-			mc.l("prev", this, arguments);
 			var cur = this.element.children("." + css.STEP_CURRENT);
 			var prev = null;
 			if(!cur.is("." + css.STEP_FIRST)){
@@ -228,7 +232,6 @@
 		_prevButton : null,
 		_nextButton : null,
 		next: function() {
-			mc.l("next", this, arguments);
 			var cur = this.element.children("." + css.STEP_CURRENT);
 			var next = null;
 			if(!cur.is("." + css.STEP_LAST)){
@@ -249,19 +252,15 @@
 		},
 		
 		reset: function() {
-			mc.l("reset", this, arguments);
+			//mc.l("reset", this, arguments);
 		},
 		
 		_setOption: function(key, value){
-			mc.l("_setOptions", this, arguments);
+			//mc.l("_setOptions", this, arguments);
 		},
 		
 		_setOptions: function(options){
-			mc.l("_setOptions", this, arguments);
+			//mc.l("_setOptions", this, arguments);
 		}
-	});
-	
-	$.extend($.yy.wizard, {
-		instances: []
 	});
 }(jQuery));
