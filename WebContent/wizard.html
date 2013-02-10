@@ -15,7 +15,31 @@
 <script>
 	$(function() {
 		mc.on();
-		$( ".wizard" ).wizard();
+		$( ".wizard" ).wizard({
+			beforeNext: function(){
+				console.log('beforeNext', this, arguments);
+				//return false;
+			}
+		});
+		/*
+		$( ".wizard" ).bind("wizardmyclose", function(){
+			console.log('MyClose', this, arguments);
+		});
+		
+		$( ".wizard" ).bind("wizardbeforenext", function(){
+			console.log('beforeNext2', this, arguments);
+		});
+			
+		$( ".wizard" ).on("wizardafternext", function(){
+			console.log('afterNext', this, arguments);
+		});
+		
+		$( ".wizard" ).bind("wizardbeforenext", function(){
+			console.log('beforeNext3', this, arguments);
+		});
+		
+		$( ".wizard" ).bind( "dialogclose", function( event, ui ) {console.log('dialogclose', this, arguments);} );
+		*/
 	});
 </script>
 
@@ -50,7 +74,7 @@
 					felis lorem euismod felis, eu ornare leo nisi vel felis. Mauris
 					consectetur tortor et purus.</p>
 			</div>
-			<!-- <div>
+			<div>
 				<h2>Content heading 3</h2>
 				<p>Mauris eleifend est et turpis. Duis id erat. Suspendisse
 					potenti. Aliquam vulputate, pede vel vehicula accumsan, mi neque
@@ -70,7 +94,7 @@
 					vehicula velit eu tellus interdum rutrum. Maecenas commodo.
 					Pellentesque nec elit. Fusce in lacus. Vivamus a libero vitae
 					lectus hendrerit hendrerit.</p>
-			</div> -->
+			</div>
 		</div>
 </div>
 </body>

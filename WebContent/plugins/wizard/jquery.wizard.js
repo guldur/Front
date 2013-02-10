@@ -1,5 +1,9 @@
-/**
- * 
+/*
+ * wizard
+ * https://github.com/yurch/wizard
+ *
+ * Copyright (c) 2013 "yurch" Yuriy Yurchenko
+ * Licensed under the MIT license.
  */
 
 ;(function( $, undefined ) {
@@ -12,8 +16,9 @@
 			STEP_N : "yy-step-"
 		};
 	
-	$.widget( "yy.wizard", {
-		
+
+	var wizard = {
+
 		_dialogOptions:{
 			appendTo : "body",
 			autoOpen : true,
@@ -31,7 +36,7 @@
 			resizable : true,
 			show : {effect : "fade", duration : "fast"},
 			title : null,
-			width : "400",
+			width : 400,
 			
 			// callbacks
 			beforeClose: null,
@@ -44,17 +49,14 @@
 			resize: null,
 			resizeStart: null,
 			resizeStop: null,
-			beforePrev: null,
-			beforeNext: null
 		},
-		
+		/**
+		 * @memberOf wizard
+		 */
 		_title : {
 			separator : ' : ',
 			text : null
-			//TODO
-			//text -> wizard
-			//0 - step 1 title
-			//...
+			//TODO title to string option, separator to another string option
 		},
 		_cacheStyle:{
 			
@@ -64,21 +66,49 @@
 			//
 			prevLabel : "prev",
 			nextLabel :	"next",
-			through : {effect : "drop", duration : "fast"},
+			finishLabel : "finish",
+			cancelLabel : "cancel",
+			through : {effect : "drop", duration : "fast"}, //TODO steps animation
 			title : null,
+			//TODO
+			//startStep
+			//button config (hide)
+			//step config: {Array} of {Object}
+			/*
+			 {
+			 	title: "",
+			 	button:{
+			 		prev: "disable",
+			 		finish: "enable"
+			 		cancel: "hidden"
+			 	}
+			 }
+			 */
 			
 			// callbacks
+			beforePrev: null,
+			beforeNext: null,
 			afterPrev: null,
-			afterNext: null
+			afterNext: null,
+			beforeFinish: null,
+			finish: null,
+			beforeCancel: null,
+			cancel: null
 		},
 		
 		_getDialogOption: function(addopt) {
 			var dialog ={};
 			for (var opt in this._dialogOptions){
+				//set dialog option
 				if(typeof this.options[opt] !== 'undefined'){
+					//TODO wrap callbacks
 					dialog[opt] = this.options[opt];
+				
+				//set additional option
 				} else if(addopt && typeof addopt[opt]  !== 'undefined'){
 					dialog[opt] = addopt[opt];
+				
+				//get dialog default option
 				} else {
 					dialog[opt] = this._dialogOptions[opt];
 				}
@@ -87,7 +117,9 @@
 			//add buttons
 			dialog.buttons = (function(that){
 				 return [{ label: "prev", text: that.options.prevLabel, click: function() { that.prev(); } },
-				         { label: "next", text: that.options.nextLabel, click: function() { that.next(); } }];
+				         { label: "next", text: that.options.nextLabel, click: function() { that.next(); } },
+				         { label: "finish", text: that.options.finishLabel, click: function() { that.finish(); } },
+				         { label: "cancel", text: that.options.cancelLabel, click: function() { that.cancel(); } }];
 			}(this));
 			return dialog;
 		},
@@ -140,10 +172,17 @@
 			var that = this;
 			this._initTitle();
 			
+			//save existing style
 			this._cacheStyle.dialog = this.element.attr("style");
 			
+			//create dialog
 			this.element.dialog(this._getDialogOption());
 			
+			//init button map
+			this._initButtons();
+			
+			//mark steps
+			//TODO move to _createSteps and _createStep
 			this.element.children().each(function(n){
 				var el = $(this);
 				//var id = css.STEP_N + n;
@@ -162,27 +201,25 @@
 		},
 		
 		_init: function() {
-			this.element.children("." + css.STEP).hide().removeClass(css.STEP_CURRENT);
-			
-			//show first step
-			//mark it
-			//set title
-			this._setTitle(this.element.find("." + css.STEP_FIRST).show().addClass(css.STEP_CURRENT).attr('title'));
-			
-			
-			this._initButtons();
-			this._prevButton.button( "disable" );
+			this.reset();
 			if ( this.options.autoOpen ) {
 				this.open();
 			}
 		},
 		
 		_initButtons: function(){
-			if(!this._prevButton){
-				this._prevButton = $('button[label="prev"]', this.element.parent());
+			var dialog = this.element.parent();
+			if(!this.button.prev){
+				this.button.prev = $('button[label="prev"]', dialog);
 			}
-			if(!this._nextButton){
-				this._nextButton = $('button[label="next"]', this.element.parent());
+			if(!this.button.next){
+				this.button.next = $('button[label="next"]', dialog);
+			}
+			if(!this.button.finish){
+				this.button.finish = $('button[label="finish"]', dialog);
+			}
+			if(!this.button.cancel){
+				this.button.cancel = $('button[label="cancel"]', dialog);
 			}
 		},
 		
@@ -209,57 +246,127 @@
 		
 		open: function() {
 			this._isOpen = true;
-			$( this ).dialog( "open" );
+			$( this.element ).dialog( "open" );
+			//this._trigger('open');
 		},
 		
 		close: function() {
 			this._isOpen = false;
-			$( this ).dialog( "close" );
+			$( this.element ).dialog( "close" );
+			
 		},
 		
 		prev: function() {
-			var cur = this.element.children("." + css.STEP_CURRENT);
-			var prev = null;
-			if(!cur.is("." + css.STEP_FIRST)){
-				prev = cur.removeClass(css.STEP_CURRENT).hide().prev("." + css.STEP).addClass(css.STEP_CURRENT).show();
-				
-				//set title
-				this._setOption('title', prev.attr('title') || "");
-			}
 			
-			//disable or not  
-			if(prev && prev.is("." + css.STEP_FIRST)){
-				this._prevButton.button( "disable" );
-			}
+			if(this._trigger('beforePrev') !== false){
+				var cur = this.element.children("." + css.STEP_CURRENT);
+				var prev = null;
+				//if step is not first one
+				if(!cur.is("." + css.STEP_FIRST)){
+					//hide current and go to the previous
+					prev = cur.removeClass(css.STEP_CURRENT).hide().prev("." + css.STEP).addClass(css.STEP_CURRENT).show();
+					
+					//set step title
+					this._setOption('title', prev.attr('title') || "");
+					
+					//disable if first step
+					if(prev && prev.is("." + css.STEP_FIRST)){
+						this.button.prev.button( "disable" );
+					}
+					
+					//disable finish, only last step have it, for now
+					this.button.finish.button( "disable" );
+					
+					//enable next
+					if(this.button.next.button( "option", "disabled" )){
+						this.button.next.button( "enable" );
+					}
+				}
 			
-			if(this._nextButton.button( "option", "disabled" )){
-				this._nextButton.button( "enable" );
+				this._trigger('afterPrev');
 			}
 		},
-		_prevButton : null,
-		_nextButton : null,
+		
+		button : {
+			prev : null,
+			next : null,
+			finish : null,
+			cancel : null
+		},
+		
 		next: function() {
-			var cur = this.element.children("." + css.STEP_CURRENT);
-			var next = null;
-			if(!cur.is("." + css.STEP_LAST)){
-				next = cur.removeClass(css.STEP_CURRENT).hide().next("." + css.STEP).addClass(css.STEP_CURRENT).show();
-				
-				//set title
-				this._setOption('title', next.attr('title') || "");
-			}
 			
-			//disable or not  
-			if(next && next.is("." + css.STEP_LAST)) {
-				this._nextButton.button( "disable" );
-			}
-			
-			if(this._prevButton.button( "option", "disabled" )){
-				this._prevButton.button( "enable" );
+			if(this._trigger('beforeNext') !== false){
+				var cur = this.element.children("." + css.STEP_CURRENT);
+				var next = null;
+				//if step is not last one
+				if(!cur.is("." + css.STEP_LAST)){
+					//hide current and go to the next
+					next = cur.removeClass(css.STEP_CURRENT).hide().next("." + css.STEP).addClass(css.STEP_CURRENT).show();
+					
+					//set step title
+					this._setOption('title', next.attr('title') || "");
+					
+					//disable next
+					if(next && next.is("." + css.STEP_LAST)) {
+						this.button.next.button( "disable" );
+						
+						//and enable finish
+						if(this.button.finish.button( "option", "disabled" )){
+							this.button.finish.button( "enable" );
+						}
+					}
+					
+					//enable prev
+					if(this.button.prev.button( "option", "disabled" )){
+						this.button.prev.button( "enable" );
+					}
+					
+					this._trigger('afterNext');
+				}
 			}
 		},
 		
 		reset: function() {
-			//mc.l("reset", this, arguments);
+			this.element.children("." + css.STEP).hide().removeClass(css.STEP_CURRENT);
+			
+			//show first step
+			//mark it
+			//set title
+			this._setTitle(this.element.find("." + css.STEP_FIRST).show().addClass(css.STEP_CURRENT).attr('title'));
+			//disable prev button
+			this.button.prev.button( "disable" );
+			
+			//remove focus
+			$(':button', this.element.parent()).blur();
+			
+			//disable finish, only last step have it, for now
+			this.button.finish.button( "disable" );
+		},
+		
+		finish: function(){
+			if(this._trigger('beforeFinish') !== false){
+				//disable all buttons
+				$.each(this.button, function(){
+					//this is button
+					this.button( "disable" );
+				});
+				
+				//TODO final step 
+				//if the finish callback return false keep dialog on last step
+				if(this._trigger('finish') !== false){
+					this.close();
+				} else if(this.button.cancel){
+					this.button.cancel.button( "enable" );
+				} 
+			}
+		},
+		
+		cancel: function(){
+			if(this._trigger('beforeCancel') !== false){
+				this.close();
+				this._trigger('cancel');
+			}
 		},
 		
 		_setOption: function(key, value){
@@ -271,7 +378,12 @@
 		},
 		
 		_setOptions: function(options){
-			//mc.l("_setOptions", this, arguments);
+			var that = this;
+			$.each( options, function( key, value ) {
+				that._setOption( key, value );
+			});
 		}
-	});
+	};
+	
+	$.widget( "yy.wizard",wizard);
 }(jQuery));
