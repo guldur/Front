@@ -21,7 +21,7 @@
 			dialogClass : "",
 			draggable : true,
 			height : "auto",
-			hide : {effect : "drop", duration : "fast"},
+			hide : {effect : "fade", duration : "fast"},
 			maxHeight : null,
 			maxWidth : null,
 			minHeight : 200,
@@ -29,7 +29,7 @@
 			modal : true,
 			position : { my: "center", at: "center", of: window },
 			resizable : true,
-			show : {effect : "drop", duration : "fast"},
+			show : {effect : "fade", duration : "fast"},
 			title : null,
 			width : "400",
 			
@@ -51,6 +51,10 @@
 		_title : {
 			separator : ' : ',
 			text : null
+			//TODO
+			//text -> wizard
+			//0 - step 1 title
+			//...
 		},
 		_cacheStyle:{
 			
@@ -160,6 +164,9 @@
 		_init: function() {
 			this.element.children("." + css.STEP).hide().removeClass(css.STEP_CURRENT);
 			
+			//show first step
+			//mark it
+			//set title
 			this._setTitle(this.element.find("." + css.STEP_FIRST).show().addClass(css.STEP_CURRENT).attr('title'));
 			
 			
@@ -217,16 +224,16 @@
 				prev = cur.removeClass(css.STEP_CURRENT).hide().prev("." + css.STEP).addClass(css.STEP_CURRENT).show();
 				
 				//set title
-				this._setOption('title', prev.attr('title'));
+				this._setOption('title', prev.attr('title') || "");
 			}
 			
 			//disable or not  
 			if(prev && prev.is("." + css.STEP_FIRST)){
 				this._prevButton.button( "disable" );
-			} else {
-				if(this._nextButton.button( "option", "disabled" )){
-					this._nextButton.button( "enable" );
-				}
+			}
+			
+			if(this._nextButton.button( "option", "disabled" )){
+				this._nextButton.button( "enable" );
 			}
 		},
 		_prevButton : null,
@@ -238,16 +245,16 @@
 				next = cur.removeClass(css.STEP_CURRENT).hide().next("." + css.STEP).addClass(css.STEP_CURRENT).show();
 				
 				//set title
-				this._setOption('title', next.attr('title'));
+				this._setOption('title', next.attr('title') || "");
 			}
 			
 			//disable or not  
 			if(next && next.is("." + css.STEP_LAST)) {
 				this._nextButton.button( "disable" );
-			} else {
-				if(this._prevButton.button( "option", "disabled" )){
-					this._prevButton.button( "enable" );
-				}
+			}
+			
+			if(this._prevButton.button( "option", "disabled" )){
+				this._prevButton.button( "enable" );
 			}
 		},
 		
@@ -256,7 +263,11 @@
 		},
 		
 		_setOption: function(key, value){
-			//mc.l("_setOptions", this, arguments);
+			switch ( key ) {
+			case "title":
+				this._setTitle(value || '');
+				break;
+			}
 		},
 		
 		_setOptions: function(options){
