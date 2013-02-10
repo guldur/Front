@@ -1,17 +1,27 @@
-/*
- *	! Copyright (c) 2013 Yuriy Yurch (http://github.com/yurch)
+/**
+ * ! Copyright (c) 2013 Yuriy Yurchenko (http://github.com/yurch)
+ * 
+ * @fileOverview Tool for safe logging. (soon on github!)
+ * @author <a href="mailto:work.yuriy@gmail.com">Yuriy Yurchenko</a>
+ * @version 0.1.1
  */
 
+/**
+ * @memberOf __mconsole
+ * @type mconsole
+ */
 ;(function(){
-	/*
-	 * options
-	 * new  for git
+	/**
+	 * default options
 	 */
 	var defOptions = {
 			enable: false,
 			keep: false //TODO #future
 	};
 	
+	/**
+	 * check out what's available
+	 */
 	var _checks = {
 			console : !!window.console,
 			log : !!window.console && !!window.console.log,
@@ -20,37 +30,59 @@
 			debug : !!window.console && !!window.console.debug
 	};
 	
+	/**
+	 * setting of logger
+	 */
 	var _settings = {
 			_names: ["mc", "mconsole"]
 	};
 	
-	/*
-	 * methods
+	/**
+	 * Use method of console if it is available to print the arguments
+	 * @param method {string} method name (log, info, debug, error)
+	 * @param args {arguments} arguments of method
+	 * @this {_Mconsole}
+	 * @returns this
 	 */
 	
 	function _do (method, args){
 		if(_settings.enable){
 			if(_checks[method]){
+				/*
+				 * console in not an Object in IE
+				 * it methods are not Functions
+				 */
 				if(console[method].apply){
 					console[method].apply(console, args);
 				} else {
-					//IE
+					//little help
 					helpie(method, args);
-					
 				}
 			}
 		}
 		return this;
 	}
 	
+	/**
+	 * Help IE to print the parameters
+	 * @param {string} name of console methods
+	 * @returns void  
+	 */
 	function helpie(method, args){
 		var sb = [];
-		for(var i = args.length; i--;){
+		for(var l = args.length, i = 0; l--; i++){
 			sb.push(getSource(args[i]));
 		}
 		console[method](sb.join(", "));
 	}
 	
+	
+	/**
+	 * Convert parameter to string 
+	 * TODO improve objects, functions
+	 * @param anything
+	 * @returns {string}
+	 */
 	function getSource(o){
 		if(typeof o === "string"){
 			return '"' + o + '"';
@@ -69,9 +101,16 @@
 		} else {
 			return o + "";
 		}
-		//typeof o === "function" return o.toString(); 
 	}
 	
+	/**
+	 * Insert inst object as property of win object if they are not taken.
+	 * Names of property names are taken from nameArr.
+	 * @param win {Object} window object(could be any )
+	 * @param nameArr {Array} names of properties
+	 * @param inst {Object} object to set
+	 * @returns void
+	 */
 	function _setPublic(win, nameArr, inst){
 		var _nameArr = nameArr instanceof Array ? nameArr : typeof nameArr === "object" ? [nameArr] : [];
 		
@@ -84,11 +123,13 @@
 	}
 	
 	/**
-	 * set to settings all fields of all objects in the arguments
-	 * each next object override  the same field of previous
-	 * @param def {Object}
-	 * @param opts {Object}
-	 * @returns mc {Object}
+	 * Set to settings all fields of all objects in the arguments.
+	 * Each next object override  the same field of previous.
+	 * Use to combine and update settings of logger
+	 * @param def {Object} default options
+	 * @param opts {Object} new options
+	 * @this {_Mconsole}
+	 * @returns this
 	 */
 	function _set(def, opts){
 		for(var i = arguments.length; i--;){
@@ -103,8 +144,9 @@
 		return this;
 	}
 	
-	/*
-	 * define
+	/**
+	 * gather stuff
+	 * @constructor
 	 */
 	function _Mconsole(options){
 		if(this instanceof _Mconsole){
@@ -124,90 +166,7 @@
 		}
 	}
 	
+	//add logger to window
 	_setPublic(window, _settings._names, new _Mconsole());
 	
-	/*
-	window.mc.l("mc ready to use!");
-	throw new Error("mc namespace is taken!");
-	window.mconsole.l("mconsole ready to use!");
-	throw new Error("mconsole namespace is taken!");
-	*/
 })();
-
-/*
-function _mconsole(){
-	  this.on=null;
-	  this.enable=false;
-	  this.iecons=[];
-	  this.ietimer={};
-	  this.is={};
-	  this.isEnable=function(){
-		  return !!this.enable;
-	  };
-	  this.log=function(a){
-		  if(this.isEnable()){
-		    if(this.is.console&&this.is.log){
-		      my_console_log(a);
-		    }else{
-		      this.iecons.push(a);
-		    }
-		  }
-	  };
-	  this.time=function(a){
-	    if(this.is.console&&this.is.time){
-	      console.time(a);
-	    }else{
-	      this.ietimer[a]=(new Date).getTime();
-	    }
-	  };
-	  this.timeEnd=function(a){
-	    if(this.is.console&&this.is.timeEnd){
-	      console.timeEnd(a);
-	    }else{
-	      this.log(a+": "+((new Date).getTime()-this.ietimer[a])+"ms");
-	    }
-	  };
-	  this.debug = function(a){
-		  if(this.is.console&&this.is.debug){
-		      console.debug(a);
-		    }else{
-		      //
-		    }
-	  },
-	  this.print=function(){
-	    return this.iecons.join("\n----\n");
-	  };
-	  this.printC=function(){
-	    this.print;
-	    this.iecons=[];
-	  };
-	  this.getUrlParam=function(){
-	    return "mconsole";
-	  };
-	  this._checkSwitch=function(){
-	    this.on=true;
-	  };
-	  this._initF=function(){
-	    this._checkSwitch();
-	    this.is.console = typeof console!='undefined';
-	    if(this.is.console){
-	      this.is.log = typeof my_console_log!='undefined';
-	      this.is.time = typeof console.time!='undefined';
-	      this.is.timeEnd = typeof console.timeEnd!='undefined';
-	      this.is.debug = typeof console.debug!='undefined';
-	    }else{
-	      this.is.log = false;
-	      this.is.time = false;
-	      this.is.timeEnd = false;
-	      this.is.debug = false;
-	    }
-	    return true;
-	  };
-	  this._init=this._initF();
-	  this.toString=function(){return "mconsole";};
-	  
-	  this.D=this.debug;
-	  this.L=this.log;
-	}
-	
-	*/
