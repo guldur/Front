@@ -50,9 +50,7 @@
 			resizeStart: null,
 			resizeStop: null,
 		},
-		/**
-		 * @memberOf wizard
-		 */
+
 		_title : {
 			separator : ' : ',
 			text : null
@@ -70,6 +68,7 @@
 			cancelLabel : "cancel",
 			through : {effect : "drop", duration : "fast"}, //TODO steps animation
 			title : null,
+			resetOnOpen: true,
 			//TODO
 			//startStep
 			//button config (hide)
@@ -246,6 +245,9 @@
 		
 		open: function() {
 			this._isOpen = true;
+			if(this.options.resetOnOpen){
+				this.reset();
+			}
 			$( this.element ).dialog( "open" );
 			//this._trigger('open');
 		},
@@ -330,18 +332,31 @@
 		reset: function() {
 			this.element.children("." + css.STEP).hide().removeClass(css.STEP_CURRENT);
 			
+			var first = this.element.find("." + css.STEP_FIRST);
+			
+			
 			//show first step
 			//mark it
 			//set title
-			this._setTitle(this.element.find("." + css.STEP_FIRST).show().addClass(css.STEP_CURRENT).attr('title'));
+			this._setTitle(first.show().addClass(css.STEP_CURRENT).attr('title'));
 			//disable prev button
 			this.button.prev.button( "disable" );
 			
-			//remove focus
-			$(':button', this.element.parent()).blur();
+			//enable next
+			if(!first.is('.'+css.STEP_LAST)){
+				this.button.next.button( "enable" );
+				//disable finish, only last step have it, for now
+				this.button.finish.button( "disable" );
+			} else {
+				this.button.finish.button( "enable" );
+			}
 			
-			//disable finish, only last step have it, for now
-			this.button.finish.button( "disable" );
+			this.button.cancel.button( "enable" );
+			
+			
+			
+			//remove focus
+			$('button', this.element.parent()).blur();
 		},
 		
 		finish: function(){

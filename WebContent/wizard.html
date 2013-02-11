@@ -40,12 +40,14 @@
 		
 		$( ".wizard" ).bind( "dialogclose", function( event, ui ) {console.log('dialogclose', this, arguments);} );
 		*/
+		$('#open').click(function(){$( ".wizard" ).wizard('open')});
 	});
 </script>
 
 
 </head>
 <body style="font-size: 10px;">
+<a id="open" href="#">open</a>
 <div>
 	<div class="wizard"  title="Wizard">
 			<div title="step 1" style="border: 1px;">
